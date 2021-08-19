@@ -1,3 +1,4 @@
+#' @noRd
 centerMatrix <-
 function (xls, medianCenter = NULL, log = FALSE, do.log = FALSE, log.base = 2)
 {

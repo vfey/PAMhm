@@ -1,3 +1,4 @@
+#' @noRd
 plotAdjust <-
 function (dm)
 {

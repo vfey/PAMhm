@@ -1,12 +1,16 @@
 Package: PAMhm
 Type: Package
-Title: Generate heatmaps based on Partioning Around Medoids (PAM)
-Version: 0.1.0
-Author: Vidal Fey
-Maintainer: Dhanaprakash Jambulingam <dhajam@utu.fi>
-Description: Data are partitioned (clustered) into _k_ clusters _around medoids_, a more robust version of K-means and plotted as a fractioned heatmap.
-Depends: heatmapGen, cluster
-Suggests: RColorBrewer, R.utils, gdata
-License: file LICENSE
+Title: Generate Heatmaps Based on Partioning Around Medoids (PAM)
+Version: 0.1.1
+Date: 2021-08-17
+Author: Vidal Fey [aut, cre], Henri Sara [aut]
+Authors@R: c(person("Vidal", "Fey", email = "vidal.fey@gmail.com", role=c("aut", "cre")), person("Henri", "Sara", email = "henri.sara@gmail.com", role=c("aut")))
+Maintainer: Vidal Fey <vidal.fey@gmail.com>
+Description: Data are partitioned (clustered) into _k_ clusters _around medoids_,
+    a more robust version of K-means and plotted as a fractioned heatmap.
+Depends: heatmapFlex, cluster, grDevices, graphics, stats
+Imports: RColorBrewer, R.utils, readxl, readmoRe, utils, plyr
+Suggests: robustHD
+License: GPL-3
 Encoding: UTF-8
-LazyData: true
+RoxygenNote: 7.1.1

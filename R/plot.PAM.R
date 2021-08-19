@@ -1,10 +1,11 @@
+#' @noRd
 plot.PAM <-
 		function (clust, what, res.folder = ".", cols = "bwr", trim = -1, autoadj = TRUE,
 				pdf.width = 13, pdf.height = 10, labelwidth = 0.6, labelheight = 0.25,
 				reorder = c(TRUE, TRUE), r.cex = 0.5, c.cex = 1, PDF = TRUE, PNG = FALSE,
 				main = NULL, file = main, shiny = FALSE)
 {
-	
+
 	if (autoadj) {
 		adj.l <- plotAdjust(clust$dat)
 	} else {
@@ -21,7 +22,7 @@ plot.PAM <-
 				pdf.width = adj.l$pdf.width, pdf.height = adj.l$pdf.height,
 				labelwidth=adj.l$labelwidth, labelheight=adj.l$labelheight,
 				reorder=reorder, r.cex=adj.l$r.cex, c.cex=adj.l$c.cex,
-				folder.name = res.folder, main=main)
+				project.folder = res.folder, main=main)
 	} else {
 		if (PDF) {
 			pdf.name <- file.path(res.folder, paste(filename.pam, ".pdf", sep=""))
@@ -38,8 +39,8 @@ plot.PAM <-
 					pdf.width = adj.l$pdf.width, pdf.height = adj.l$pdf.height,
 					labelwidth=adj.l$labelwidth, labelheight=adj.l$labelheight,
 					reorder=reorder, r.cex=adj.l$r.cex, c.cex=adj.l$c.cex,
-					folder.name = res.folder, PNG = TRUE, main=main)
-			if (all(unlist(lapply(png.name, is.null)))) { png.name <- NULL }
+					project.folder = res.folder, PNG = TRUE, main=main)
+			if (all(unlist(plyr::llply(png.name, is.null)))) { png.name <- NULL }
 			if (!PDF) {
 				return(png.name)
 			}
@@ -49,14 +50,14 @@ plot.PAM <-
 					pdf.width = adj.l$pdf.width, pdf.height = adj.l$pdf.height,
 					labelwidth=adj.l$labelwidth, labelheight=adj.l$labelheight,
 					reorder=reorder, r.cex=adj.l$r.cex, c.cex=adj.l$c.cex,
-					folder.name = res.folder, main=main)
+					project.folder = res.folder, main=main)
 			return()
 		}
 		if (PDF) {
 			return(pdf.name)
 		} else {
 			return(NULL)
-		}  
+		}
 	}
-	
+
 }

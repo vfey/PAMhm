@@ -1,8 +1,9 @@
+#' @noRd
 makeClustList <-
-function (xlslist, clusternum, metric = "manhatten")
+function (xlslist, clusternum, metric = "manhattan")
 {
 
-  clustlist <- lapply(xlslist, function(x) {
+  clustlist <- plyr::llply(xlslist, function(x) {
                       y <- list()
                       y$dat <- x
                       y$PAM <- lapply(clusternum, function(z) {

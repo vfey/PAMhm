@@ -1,3 +1,4 @@
+#' @noRd
 setDendro <-
 function (dendrograms)
 {
