@@ -13,7 +13,8 @@ PAM.hm(
   symbolcol = 1,
   sample.names = NULL,
   cluster.number = 4,
-  trim = -1,
+  trim = NULL,
+  winsorize.mat = TRUE,
   cols = "BlueWhiteRed",
   dendrograms = "Both",
   autoadj = TRUE,
@@ -54,14 +55,20 @@ numbers of sheets in exactly the same order as the files.}
 \item{sample.names}{(\code{character}). A vector of names used for plot titles and output files.}
 
 \item{cluster.number}{(\code{character} or \code{integer}). A vector of numbers used for PAM clustering (corresponds to argument
-\code{k} in \code{cluster::pam}). If a character vector, this is broken down to a numeric vector accepting
+\code{k} in \code{\link[cluster]{pam}}). If a character vector, this is broken down to a numeric vector accepting
 comma-separated strings in the form of, e.g, "4" and "2-5". The clustering algorithm then iterates through all given numbers.
 See 'Details'.}
 
-\item{trim}{(\code{numeric}). Value to "cut off" data distribution. Values and both ends of the distribution,
-larger or smaller, respectively, will be made equal to \code{+/-trim}. \code{NULL} means no trimming. Defaults to
-\code{-1} meaning the largest absolute value of the distribution rounded to two digits will be used. If the data
-matrix contains only positive values trimming is disabled.}
+\item{trim}{(\code{numeric}). Value to "cut off" data distribution. Values at both ends of the distribution,
+larger or smaller, respectively, will be made equal to \code{+/-trim}, i.e., data will be symmetrical around 0.
+\code{NULL} means no trimming which is the default. If \code{trim} is \code{-1} (or any negative value) and
+\code{winsorize.mat} is \code{TRUE} the matrix will be \emph{winsorized} and then the smaller of the two largest
+absolute values at both ends of the distribution rounded to three digits will be used. If \code{winsorize.mat}
+is \code{FALSE} the largest possible absolute integer, i.e., the smaller of the to extreme integers is used.
+Trimming is disabled for only positive or only negative values.}
+
+\item{winsorize.mat}{(\code{logical}). Should the matrix be \emph{winsorized} (cleaned of outliers) before plotting?
+Defaults to \code{TRUE}. See 'Details'.}
 
 \item{cols}{(\code{character}). Name of the colour palette.}
 
@@ -137,6 +144,10 @@ Argument \code{x} can be a \code{data.frame} or numeric matrix to be used direct
     If \code{autoadj} is \code{TRUE} character expansion (cex) for rows annd columns, pdf width and height and
     label width and height are adjusted automatically based on the dimensions of the data matrix and length
     (number of characters) of the labels.
+
+    The default behavior regarding outliers is to \emph{winsorize} the matrix before plotting, i.e., shrink outliers
+    to the unscattered part of the data by replacing extreme values at both ends of the distribution with less
+    extreme values. This is done for the same reason as trimming but the data will not be symmetrical around 0.
 }
 \examples{
 # Generate a random 10x10 matrix and plot it using default values
@@ -148,16 +159,18 @@ PAM.hm(mat, cluster.number = 3)
 PAM.hm(mat, cluster.number = 2:4)               # integer vector
 PAM.hm(mat, cluster.number = c("2", "4-5"))     # character vector
 
-# Trim the data by applying winsorization (shrink outlying observations
-# to the border of the main part of the data)
-## Introduce outlier to the matrix and plot w/o trimming
+# Using the 'trim' argument
+## Introduce outlier to the matrix and plot w/o trimming or winsorization
 mat[1] <- mat[1] * 10
-PAM.hm(mat, cluster.number = 3)
+PAM.hm(mat, cluster.number = 3, trim = NULL, winsorize = FALSE)
 
-## get trim value and plot again
-m <- robustHD::winsorize(as.numeric(mat))
-tr <- abs(min(round(c(min(m, na.rm = TRUE), max(m, na.rm = TRUE)), 2), na.rm = TRUE))
-PAM.hm(mat, cluster.number = 3, trim = tr)
+## calculate a trim value by getting the largest possible absolute integer and
+## plot again
+tr <- min(abs(ceiling(c(min(mat, na.rm = TRUE), max(mat, na.rm = TRUE)))),
+    na.rm = TRUE)
+PAM.hm(mat, cluster.number = 3, trim = tr, winsorize = FALSE)
+## Note that the outlier is still visible but since it is less extreme
+## it does not distort the colour scheme.
 
 # An example reading data from an Excel file
 # The function readxl::read_excel is used internally to read Excel files.
@@ -165,6 +178,10 @@ PAM.hm(mat, cluster.number = 3, trim = tr)
 readxl_datasets <- readxl::readxl_example("datasets.xlsx")
 PAM.hm(readxl_datasets, cluster.number = 4, symbolcol = 5)
 
+}
+\references{
+Kaufman, L., & Rousseeuw, P. J. (Eds.). (1990). \emph{Finding Groups in Data: An Introduction to Cluster Analysis.}
+    John Wiley & Sons, Inc. \doi{10.1002/9780470316801}
 }
 \seealso{
 \code{\link[utils]{read.delim}}

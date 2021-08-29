@@ -1,16 +1,24 @@
 Package: PAMhm
 Type: Package
-Title: Generate Heatmaps Based on Partioning Around Medoids (PAM)
-Version: 0.1.1
-Date: 2021-08-17
+Title: Generate Heatmaps Based on Partitioning Around Medoids (PAM)
+Version: 0.1.2
+Date: 2021-08-24
 Author: Vidal Fey [aut, cre], Henri Sara [aut]
 Authors@R: c(person("Vidal", "Fey", email = "vidal.fey@gmail.com", role=c("aut", "cre")), person("Henri", "Sara", email = "henri.sara@gmail.com", role=c("aut")))
 Maintainer: Vidal Fey <vidal.fey@gmail.com>
-Description: Data are partitioned (clustered) into _k_ clusters _around medoids_,
-    a more robust version of K-means and plotted as a fractioned heatmap.
+Description: Data are partitioned (clustered) into k clusters "around medoids", which is
+    a more robust version of K-means implemented in the function pam() in the 'cluster' package.
+    The PAM algorithm is described in Kaufman and Rousseeuw (1990) <doi:10.1002/9780470316801>.
+    Please refer to the pam() function documentation for more references.
+    Clustered data is plotted as a split heatmap allowing visualisation of representative
+    "group-clusters" (medoids) in the data as separated fractions of the graph while those
+    "sub-clusters" are visualised as a traditional heatmap based on hierarchical clustering.
 Depends: heatmapFlex, cluster, grDevices, graphics, stats
-Imports: RColorBrewer, R.utils, readxl, readmoRe, utils, plyr
-Suggests: robustHD
+Imports: RColorBrewer, R.utils, readxl, readmoRe, utils, plyr, robustHD
+Suggests:
+    rmarkdown,
+    knitr
 License: GPL-3
 Encoding: UTF-8
 RoxygenNote: 7.1.1
+VignetteBuilder: knitr

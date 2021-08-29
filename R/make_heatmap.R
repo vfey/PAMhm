@@ -1,7 +1,7 @@
 #' @noRd
 make_heatmap <-
-  function (clust, what, cols = "bwr", trim = -1, pdf.width = 13,
-            pdf.height = 10,  labelwidth = 0.6, labelheight = 0.25,
+  function (clust, what, cols = "bwr", trim = NULL, winsorize.mat = TRUE,
+            pdf.width = 13, pdf.height = 10,  labelwidth = 0.6, labelheight = 0.25,
             reorder = c(TRUE, TRUE), r.cex = 0.5, c.cex = 1, project.folder = ".",
             PNG = FALSE, main = NULL)
   {
@@ -19,11 +19,20 @@ make_heatmap <-
       par(mar=par("mar")+c(5,5,0,5))
       grps <- x$PAM$clustering
       m <- x$PAM$data
-      if (min(m, na.rm = TRUE) > 0) {
+      if (min(m, na.rm = TRUE) > 0 || max(m, na.rm = TRUE) < 0) {
         trim <- NULL
       } else if (!is.null(trim) && trim < 0) {
-        trim <- abs(min(round(c(min(m, na.rm = TRUE), max(m, na.rm = TRUE)), 2),
-                        na.rm = TRUE))
+        if (winsorize.mat) {
+          m_tr <- robustHD::winsorize(as.numeric(m))
+          trim <- min(abs(round(c(min(m_tr, na.rm = TRUE), max(m_tr, na.rm = TRUE)), 3)),
+                      na.rm = TRUE)
+        } else {
+          trim <- min(abs(ceiling(c(min(m, na.rm = TRUE), max(m, na.rm = TRUE)))),
+                      na.rm = TRUE)
+        }
+      }
+      if (is.null(trim) && winsorize.mat) {
+        m <- matrix(robustHD::winsorize(as.numeric(m)), nrow = nrow(m))
       }
       if (is.null(main)) {
         main <- paste(what, ", ",

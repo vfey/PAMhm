@@ -5,7 +5,13 @@
 \alias{PAMhm}
 \title{Generate Heatmaps Based on Partioning Around Medoids (PAM)}
 \description{
-Data are partitioned (clustered) into _k_ clusters _around medoids_, a more robust version of K-means and plotted as a fractioned heatmap.
+Data are partitioned (clustered) into k clusters "around medoids", which is
+a more robust version of K-means implemented in the function pam() in the 'cluster' package.
+The PAM algorithm is described in Kaufman and Rousseeuw (1990) <doi:10.1002/9780470316801>.
+Please refer to the pam() function documentation for more references.
+Clustered data is plotted as a split heatmap allowing visualisation of representative
+"group-clusters" (medoids) in the data as separated fractions of the graph while those
+"sub-clusters" are visualised as a traditional heatmap based on hierarchical clustering.
 }
 \details{
 \tabular{ll}{

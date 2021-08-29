@@ -1,7 +1,7 @@
 #' @noRd
 doPAMhm <-
 		function(dat, project.folder = ".", nsheets = 1, symbolcol = 1,
-				sample.names = NULL, cluster.number = 4, trim = -1,
+				sample.names = NULL, cluster.number = 4, trim = NULL, winsorize.mat = TRUE,
 				cols = "BlueWhiteRed", dendrograms = "Both", autoadj = TRUE, pdf.height = 10,
 				pdf.width = 10, labelheight = 0.25, labelwidth = 0.2, r.cex = 0.5,
 				c.cex = 1, medianCenter = NULL, log = FALSE, do.log = FALSE,
@@ -42,15 +42,15 @@ doPAMhm <-
 # the same file
 	if (shiny) {
 		plot.PAM(clustlist[[1]], names(clustlist)[1], res.folder = resultsFolder, cols = plotCol,
-				trim = trim, autoadj = autoadj, pdf.width = pdf.width,
+				trim = trim, winsorize.mat = winsorize.mat, autoadj = autoadj, pdf.width = pdf.width,
 				pdf.height = pdf.height, labelwidth = labelwidth,
 				labelheight = labelheight, reorder = reorder, r.cex = r.cex,
 				c.cex = c.cex, PDF = PDF, PNG = PNG, main = main, file = file, shiny = TRUE)
 	} else {
 		pfln <- plyr::llply(names(clustlist), function(x) {
 					plot.PAM(clustlist[[x]], x, res.folder = resultsFolder, cols = plotCol,
-							trim = trim, autoadj = autoadj, pdf.width = pdf.width,
-							pdf.height = pdf.height, labelwidth = labelwidth,
+							trim = trim, winsorize.mat = winsorize.mat, autoadj = autoadj,
+							pdf.width = pdf.width, pdf.height = pdf.height, labelwidth = labelwidth,
 							labelheight = labelheight, reorder = reorder, r.cex = r.cex,
 							c.cex = c.cex, PDF = PDF, PNG = PNG, main = main, file = file)
 				})

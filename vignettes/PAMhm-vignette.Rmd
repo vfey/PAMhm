@@ -1,0 +1,112 @@
+---
+title: "Generate Heatmaps Based on Partitioning Around Medoids (PAM)"
+output: rmarkdown::html_vignette
+bibliography: refs.bib
+csl: Harvard.csl
+vignette: >
+  %\VignetteIndexEntry{Generate Heatmaps Based on Partitioning Around Medoids (PAM)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(PAMhm)
+```
+
+
+## License
+[GPL-3](https://cran.r-project.org/web/licenses/GPL-3)
+
+## Description
+Data are partitioned (clustered) into k clusters "around medoids", which is a more robust version of K-means implemented in the function pam() in the 'cluster' package. The PAM algorithm is described in [@Kaufman1990]. Please refer to the pam() function documentation for more references. Clustered data is plotted as a split heatmap allowing visualisation of representative "group-clusters" (medoids) in the data as separated fractions of the graph while those "sub-clusters" are visualised as a traditional heatmap based on hierarchical clustering.  
+
+## Installation
+### CRAN
+```{r, eval=FALSE}
+install.packages("PAMhm")
+```
+
+### Latest development version
+```{r, eval=FALSE}
+install.packages("devtools")  
+devtools::install_github("vfey/PAMhm")
+```
+
+## Usage
+### A simple example
+Generate a random 10x10 matrix and plot it using default values. We use `set.seed()` for reproducibility.
+```{r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+set.seed(1234)
+mat <- matrix(c(rnorm(100, mean = 2), rnorm(100, mean = -1.8)), nrow = 20)
+PAM.hm(mat, cluster.number = 3)
+```
+
+### A plot with more than one cluster number
+The cluster number is given as a vector of numbers (`numeric` or `character`) used for PAM clustering (corresponds to argument `k` in `cluster::pam`). If it is provided as a character vector, this is broken down to a numeric vector accepting comma-separated strings in the form of, e.g, "4" and "2-5". The clustering algorithm then iterates through all given numbers.
+```{r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+PAM.hm(mat, cluster.number = c("2", "4-5"))
+```
+
+### A _trimmed_ plot
+If the data contains outliers, the heatmap may not be very informative as the extreme values distort the colour distribution.  
+One way to make this work is to "clean" the data by replacing extreme values at both ends of the distribution by less extreme values or, in other words, "shrinking outlying observations to the border of the main part of the data" (`robustHD::winsorize`), a process called _winsorization_ and implemented in R packages `robustHD` used here, or `DescTools`, for example.  
+Instead of modifying your data matrix for a plot, `PAM.hm` accepts a `trim` value to "cut off" the data distribution internally before plotting. Values and both ends of the distribution, larger or smaller, respectively, will be made equal to `+/-trim`. There are two presets: `trim = -1`, which is the default (or any value smaller than 0) means that the smaller of the two largest absolute values at both ends of the winzorised distribution rounded to three digits will be used. `trim = NULL` means no trimming.  
+Note that trimming only makes sense for data containing both positive and negative values as the goal is to make the distribution symmetrical around zero to avoid over-emphasizing one side of the colour scheme. For that reason the matrix is internally _winsorized_ by default and NOT trimmed and for data containing only positive or only negative values trimming is disabled.  
+To demonstrate the default trimming process, we calculate the `trim` value by using `robustHD::winsorize` on our matrix.  
+
+#### Plot without trimming
+We introduce an outlier to the matrix to visualise the effect on the colour distribution.
+```{r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+mat[1] <- mat[1] * 20
+PAM.hm(mat, cluster.number = 3, trim = NULL, winsorize.mat = FALSE)
+```
+
+The outlier clearly dominates the heatmap and all other values are pretty weak and almost indistinguishable. Let's try with default trimming.
+
+#### Plot with default (winzorized) trimming
+We manually calculate the `trim` value by using _winsorization_ on the matrix including the outlier and then apply the same algorithm used internally to obtain a value from a point slightly "shifted inside" the distribution.
+```{r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+m <- robustHD::winsorize(as.numeric(mat))
+tr <- min(abs(round(c(min(m, na.rm = TRUE), max(m, na.rm = TRUE)), 3)), na.rm = TRUE)
+PAM.hm(mat, cluster.number = 3, trim = tr)
+```
+
+We can see that the default trimming does a decent job on improving the readability of the heatmap. Note that the outlier is still clearly visible but was shrunk to the main distribution as can be seen in the colour key labels.  
+
+For some data it may be desirable to emphasize the lower range of the data. To achieve that _winsorization_ can be disabled and trimming set to `-1` which in that case defaults to the largest possible absolute integer, i.e., the smaller of the to extreme integers. Values at the borders of the distribution will be coloured identically but the colours depicting the middle range around 0 will be more fine-grained.
+```{r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+PAM.hm(mat, cluster.number = 3, trim = -1, winsorize.mat = FALSE)
+```
+
+### Median-centering
+To better visualise differences between the two extremes of a data distribution with only positive or negative values, data can be centered around the median. Median-centering is robust to outliers (as compared to mean-centering) and will ensure that the plotted distribution is centered around 0, so values smaller than the median of the original data are depicted in blue and values larger than the median are depicted in red (in the present colour scheme).  
+Centering can be done row-wise, column-wise or using the grand median across the entire matrix.  
+
+#### Row-wise centering without trimming
+First, the positive-value matrix is plotted without centering or trimming.
+```{r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+set.seed(1234)
+mat <- matrix(rnorm(200, mean = 3.6), nrow=20)
+PAM.hm(mat)
+```
+
+This looks OK but we want to emphasize the smaller values in the matrix so we median-center each column and plot again. Note that we have to actively disable trimming and _winsorization_ now to see the centering effect which is not a problem since data "cleaning" by trimming or _winsorizing_ is not absolutely necessary because median-centering effectively arranges the data nearly symmetrical around 0.
+```{r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+PAM.hm(mat, medianCenter = "column", trim = NULL, winsorize.mat = FALSE)
+```
+
+If we now want to emphasize the finer differences in the range around 0 we enable automatic trimming.
+```{r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+PAM.hm(mat, medianCenter = "column", trim = -1)
+```
+
+<br>  
+
+# References

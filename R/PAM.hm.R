@@ -1,7 +1,13 @@
 #' @title Generate Heatmaps Based on Partioning Around Medoids (PAM)
 #' @docType package
 #' @name PAMhm
-#' @description Data are partitioned (clustered) into _k_ clusters _around medoids_, a more robust version of K-means and plotted as a fractioned heatmap.
+#' @description Data are partitioned (clustered) into k clusters "around medoids", which is
+#' a more robust version of K-means implemented in the function pam() in the 'cluster' package.
+#' The PAM algorithm is described in Kaufman and Rousseeuw (1990) <doi:10.1002/9780470316801>.
+#' Please refer to the pam() function documentation for more references.
+#' Clustered data is plotted as a split heatmap allowing visualisation of representative
+#' "group-clusters" (medoids) in the data as separated fractions of the graph while those
+#' "sub-clusters" are visualised as a traditional heatmap based on hierarchical clustering.
 #' @author Vidal Fey <vidal.fey@gmail.com>, Henri Sara <henri.sara@gmail.com>
 #' Maintainer: Vidal Fey <vidal.fey@gmail.com>
 #' @details \tabular{ll}{
@@ -21,6 +27,7 @@
 #' @import stats
 #' @import grDevices
 #' @import graphics
+#' @importFrom robustHD winsorize
 #' @importFrom readmoRe rm.empty.cols
 #' @importFrom utils packageVersion read.delim read.table
 #' @importFrom R.utils loadObject saveObject
@@ -41,13 +48,18 @@ NULL
 #' @param symbolcol (\code{character}). The name of the column with identifiers used as labels.
 #' @param sample.names (\code{character}). A vector of names used for plot titles and output files.
 #' @param cluster.number (\code{character} or \code{integer}). A vector of numbers used for PAM clustering (corresponds to argument
-#'     \code{k} in \code{cluster::pam}). If a character vector, this is broken down to a numeric vector accepting
+#'     \code{k} in \code{\link[cluster]{pam}}). If a character vector, this is broken down to a numeric vector accepting
 #'     comma-separated strings in the form of, e.g, "4" and "2-5". The clustering algorithm then iterates through all given numbers.
 #'     See 'Details'.
-#' @param trim (\code{numeric}). Value to "cut off" data distribution. Values and both ends of the distribution,
-#'     larger or smaller, respectively, will be made equal to \code{+/-trim}. \code{NULL} means no trimming. Defaults to
-#'     \code{-1} meaning the largest absolute value of the distribution rounded to two digits will be used. If the data
-#'     matrix contains only positive values trimming is disabled.
+#' @param trim (\code{numeric}). Value to "cut off" data distribution. Values at both ends of the distribution,
+#'     larger or smaller, respectively, will be made equal to \code{+/-trim}, i.e., data will be symmetrical around 0.
+#'     \code{NULL} means no trimming which is the default. If \code{trim} is \code{-1} (or any negative value) and
+#'     \code{winsorize.mat} is \code{TRUE} the matrix will be \emph{winsorized} and then the smaller of the two largest
+#'     absolute values at both ends of the distribution rounded to three digits will be used. If \code{winsorize.mat}
+#'     is \code{FALSE} the largest possible absolute integer, i.e., the smaller of the to extreme integers is used.
+#'     Trimming is disabled for only positive or only negative values.
+#' @param winsorize.mat (\code{logical}). Should the matrix be \emph{winsorized} (cleaned of outliers) before plotting?
+#'     Defaults to \code{TRUE}. See 'Details'.
 #' @param cols (\code{character}). Name of the colour palette.
 #' @param dendrograms (\code{character}). Which dendrograms are to be plotted? One of "Vertical", "Horizontal",
 #'     "None" or "Both". Defaults to "Both".
@@ -95,6 +107,13 @@ NULL
 #'     If \code{autoadj} is \code{TRUE} character expansion (cex) for rows annd columns, pdf width and height and
 #'     label width and height are adjusted automatically based on the dimensions of the data matrix and length
 #'     (number of characters) of the labels.
+#'
+#'     The default behavior regarding outliers is to \emph{winsorize} the matrix before plotting, i.e., shrink outliers
+#'     to the unscattered part of the data by replacing extreme values at both ends of the distribution with less
+#'     extreme values. This is done for the same reason as trimming but the data will not be symmetrical around 0.
+#' @references
+#'     Kaufman, L., & Rousseeuw, P. J. (Eds.). (1990). \emph{Finding Groups in Data: An Introduction to Cluster Analysis.}
+#'     John Wiley & Sons, Inc. \doi{10.1002/9780470316801}
 #' @seealso \code{\link[utils]{read.delim}}
 #' @seealso \code{\link[readxl]{read_excel}}
 #' @seealso \code{\link[cluster]{pam}}
@@ -109,16 +128,18 @@ NULL
 #' PAM.hm(mat, cluster.number = 2:4)               # integer vector
 #' PAM.hm(mat, cluster.number = c("2", "4-5"))     # character vector
 #'
-#' # Trim the data by applying winsorization (shrink outlying observations
-#' # to the border of the main part of the data)
-#' ## Introduce outlier to the matrix and plot w/o trimming
+#' # Using the 'trim' argument
+#' ## Introduce outlier to the matrix and plot w/o trimming or winsorization
 #' mat[1] <- mat[1] * 10
-#' PAM.hm(mat, cluster.number = 3)
+#' PAM.hm(mat, cluster.number = 3, trim = NULL, winsorize = FALSE)
 #'
-#' ## get trim value and plot again
-#' m <- robustHD::winsorize(as.numeric(mat))
-#' tr <- abs(min(round(c(min(m, na.rm = TRUE), max(m, na.rm = TRUE)), 2), na.rm = TRUE))
-#' PAM.hm(mat, cluster.number = 3, trim = tr)
+#' ## calculate a trim value by getting the largest possible absolute integer and
+#' ## plot again
+#' tr <- min(abs(ceiling(c(min(mat, na.rm = TRUE), max(mat, na.rm = TRUE)))),
+#'     na.rm = TRUE)
+#' PAM.hm(mat, cluster.number = 3, trim = tr, winsorize = FALSE)
+#' ## Note that the outlier is still visible but since it is less extreme
+#' ## it does not distort the colour scheme.
 #'
 #' # An example reading data from an Excel file
 #' # The function readxl::read_excel is used internally to read Excel files.
@@ -130,9 +151,9 @@ NULL
 PAM.hm <-
   function(x, project.folder = ".", nsheets = 1, dec = ".",
            header = TRUE, symbolcol = 1, sample.names = NULL,
-           cluster.number = 4, trim = -1, cols = "BlueWhiteRed",
-           dendrograms = "Both", autoadj = TRUE, pdf.height = 10,
-           pdf.width = 10, labelheight = 0.25, labelwidth = 0.2,
+           cluster.number = 4, trim = NULL, winsorize.mat = TRUE,
+           cols = "BlueWhiteRed", dendrograms = "Both", autoadj = TRUE,
+           pdf.height = 10, pdf.width = 10, labelheight = 0.25, labelwidth = 0.2,
            r.cex = 0.5, c.cex = 1, medianCenter = NULL, log = FALSE,
            do.log = FALSE, log.base = 2, metric = "manhattan",
            na.strings = "NA", makeFolder = TRUE, do.pdf = FALSE, do.png = FALSE,
@@ -191,8 +212,8 @@ PAM.hm <-
     # the same file
     plyr::llply(names(clustlist), function(x) {
       plot.PAM(clustlist[[x]], x, res.folder = resultsFolder, cols = plotCol,
-               trim = trim, autoadj = autoadj, pdf.width = pdf.width,
-               pdf.height = pdf.height, labelwidth = labelwidth,
+               trim = trim, winsorize.mat = winsorize.mat, autoadj = autoadj,
+               pdf.width = pdf.width, pdf.height = pdf.height, labelwidth = labelwidth,
                labelheight = labelheight, reorder = reorder, r.cex = r.cex,
                c.cex = c.cex, PDF = do.pdf, PNG = do.png)
     })
